@@ -1,0 +1,9 @@
+name = "thisstreamsfree-proxy"
+main = "src/index.ts"
+compatibility_date = "2026-06-01"
+
+# Workers KV namespace used to cache trimmed API responses (~12h TTL).
+# The `id` is filled in after running:  wrangler kv namespace create CACHE
+[[kv_namespaces]]
+binding = "CACHE"
+id = "360c5c2ac51d43b895b5e581df79c7b5"
