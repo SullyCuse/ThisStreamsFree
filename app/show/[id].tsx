@@ -5,15 +5,12 @@ import { Stack, useLocalSearchParams } from "expo-router";
 import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
 import { VerdictCard } from "../../components/VerdictCard";
 import { getShow } from "../../lib/showCache";
+import { useSubscriptions } from "../../lib/subscriptions";
 import { resolveVerdict } from "../../lib/verdict";
-
-// Phase 4 replaces this with the user's persisted subscriptions. Until then the
-// verdict runs against an empty owned set: ad-supported titles show "Free to
-// you", everything else "Not free for you".
-const OWNED_SERVICE_IDS: string[] = [];
 
 export default function ShowDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { ownedIds } = useSubscriptions();
   const show = id ? getShow(id) : undefined;
 
   if (!show) {
@@ -27,7 +24,7 @@ export default function ShowDetailScreen() {
     );
   }
 
-  const verdict = resolveVerdict(show, OWNED_SERVICE_IDS);
+  const verdict = resolveVerdict(show, ownedIds);
 
   return (
     <ScrollView contentContainerStyle={styles.container}>

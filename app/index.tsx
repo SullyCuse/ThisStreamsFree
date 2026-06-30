@@ -11,7 +11,7 @@ import {
   Text,
   View,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { Link, useRouter } from "expo-router";
 import { SearchBar } from "../components/SearchBar";
 import { ApiError, searchShows } from "../lib/api";
 import { rememberShows } from "../lib/showCache";
@@ -46,9 +46,14 @@ export default function SearchScreen() {
       <SearchBar onSearch={runSearch} autoFocus />
 
       {status === "idle" && (
-        <Text style={styles.hint}>
-          Search a movie or show to see if it&apos;s free to you.
-        </Text>
+        <View style={styles.idle}>
+          <Text style={styles.hint}>
+            Search a movie or show to see if it&apos;s free to you.
+          </Text>
+          <Link href="/subscriptions" style={styles.idleLink}>
+            Set your subscriptions to personalize results →
+          </Link>
+        </View>
       )}
 
       {status === "loading" && (
@@ -98,7 +103,9 @@ export default function SearchScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16, gap: 12 },
-  hint: { fontSize: 15, color: "#666", textAlign: "center", marginTop: 24 },
+  idle: { alignItems: "center", marginTop: 24, gap: 14 },
+  hint: { fontSize: 15, color: "#666", textAlign: "center" },
+  idleLink: { fontSize: 15, color: "#1f6feb", fontWeight: "600", textAlign: "center" },
   error: { fontSize: 15, color: "#b3261e", textAlign: "center", marginTop: 24 },
   spinner: { marginTop: 32 },
   list: { gap: 12, paddingBottom: 24 },
