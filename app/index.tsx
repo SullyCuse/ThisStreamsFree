@@ -1,5 +1,5 @@
-// Phase 3: Search screen. Type a title, see matching shows, tap one to get the
-// verdict. Owned subscriptions (which personalize the verdict) arrive in Phase 4.
+// Search screen. Type a title, see matching shows, tap one to get the verdict
+// (personalized by the user's subscriptions). Links to My Subscriptions and About.
 
 import { useState } from "react";
 import {
@@ -45,6 +45,7 @@ export default function SearchScreen() {
     <View style={styles.container}>
       <SearchBar onSearch={runSearch} autoFocus />
 
+      <View style={styles.content}>
       {status === "idle" && (
         <View style={styles.idle}>
           <Text style={styles.hint}>
@@ -97,12 +98,25 @@ export default function SearchScreen() {
           )}
         />
       )}
+      </View>
+
+      <Link href="/about" style={styles.footerLink}>
+        About
+      </Link>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16, gap: 12 },
+  content: { flex: 1 },
+  footerLink: {
+    fontSize: 14,
+    color: "#1f6feb",
+    fontWeight: "600",
+    textAlign: "center",
+    paddingVertical: 8,
+  },
   idle: { alignItems: "center", marginTop: 24, gap: 14 },
   hint: { fontSize: 15, color: "#666", textAlign: "center" },
   idleLink: { fontSize: 15, color: "#1f6feb", fontWeight: "600", textAlign: "center" },

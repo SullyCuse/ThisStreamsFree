@@ -1,12 +1,13 @@
-// Phase 3: renders a resolved Verdict — the badge, the reasons it's free, and
+// Phase 3/5: renders a resolved Verdict — the badge, the reasons it's free, and
 // (when it isn't) where it streams and what it costs.
 //
-// The streaming options are shown as text only. Tapping them to open the right
-// app / deep link is Phase 5.
+// Phase 5: each option row is tappable and opens the service via its link.
+// Free-reason rows are the primary "watch now" action.
 
-import { StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import { openExternal } from "../lib/linking";
 import type { StreamingOption } from "../lib/types";
-import type { Verdict } from "../lib/verdict";
+import type { Verdict, VerdictReason } from "../lib/verdict";
 import { VerdictBadge } from "./VerdictBadge";
 
 // For add-ons the meaningful name is the add-on, not the carrier service.
@@ -18,6 +19,28 @@ function priceSuffix(o: StreamingOption): string {
   return o.price?.formatted ? ` · ${o.price.formatted}` : "";
 }
 
+function OptionRow({
+  link,
+  text,
+  textStyle,
+}: {
+  link: string;
+  text: string;
+  textStyle: object;
+}) {
+  return (
+    <Pressable
+      style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
+      onPress={() => openExternal(link)}
+      accessibilityRole="link"
+      accessibilityLabel={text}
+    >
+      <Text style={[styles.rowText, textStyle]}>{text}</Text>
+      <Text style={styles.openHint}>↗</Text>
+    </Pressable>
+  );
+}
+
 export function VerdictCard({ verdict }: { verdict: Verdict }) {
   const { free, freeReasons, unownedSubscriptions, paidOptions } = verdict;
 
@@ -27,10 +50,13 @@ export function VerdictCard({ verdict }: { verdict: Verdict }) {
 
       {free && (
         <View style={styles.section}>
-          {freeReasons.map((r, i) => (
-            <Text key={i} style={styles.reason}>
-              ✓ {r.label}
-            </Text>
+          {freeReasons.map((r: VerdictReason, i) => (
+            <OptionRow
+              key={i}
+              link={r.option.link}
+              text={`✓ ${r.label}`}
+              textStyle={styles.reason}
+            />
           ))}
         </View>
       )}
@@ -39,9 +65,12 @@ export function VerdictCard({ verdict }: { verdict: Verdict }) {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Streaming on (you don&apos;t have it)</Text>
           {unownedSubscriptions.map((o, i) => (
-            <Text key={i} style={styles.option}>
-              {optionName(o)}
-            </Text>
+            <OptionRow
+              key={i}
+              link={o.link}
+              text={optionName(o)}
+              textStyle={styles.option}
+            />
           ))}
         </View>
       )}
@@ -50,10 +79,12 @@ export function VerdictCard({ verdict }: { verdict: Verdict }) {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Rent or buy</Text>
           {paidOptions.map((o, i) => (
-            <Text key={i} style={styles.option}>
-              {o.type === "rent" ? "Rent" : "Buy"} on {optionName(o)}
-              {priceSuffix(o)}
-            </Text>
+            <OptionRow
+              key={i}
+              link={o.link}
+              text={`${o.type === "rent" ? "Rent" : "Buy"} on ${optionName(o)}${priceSuffix(o)}`}
+              textStyle={styles.option}
+            />
           ))}
         </View>
       )}
@@ -79,7 +110,16 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
-  reason: { fontSize: 16, color: "#1a7f37" },
-  option: { fontSize: 16, color: "#222" },
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 6,
+  },
+  rowPressed: { opacity: 0.5 },
+  rowText: { fontSize: 16, flexShrink: 1 },
+  reason: { color: "#1a7f37" },
+  option: { color: "#1f6feb" },
+  openHint: { fontSize: 15, color: "#bbb", marginLeft: 12 },
   empty: { fontSize: 15, color: "#666" },
 });
