@@ -24,8 +24,10 @@ export default function SearchScreen() {
   const [status, setStatus] = useState<Status>("idle");
   const [results, setResults] = useState<Show[]>([]);
   const [error, setError] = useState<string>("");
+  const [lastQuery, setLastQuery] = useState<string>("");
 
   async function runSearch(title: string) {
+    setLastQuery(title);
     setStatus("loading");
     setError("");
     try {
@@ -61,7 +63,20 @@ export default function SearchScreen() {
         <ActivityIndicator style={styles.spinner} size="large" color="#1f6feb" />
       )}
 
-      {status === "error" && <Text style={styles.error}>{error}</Text>}
+      {status === "error" && (
+        <View style={styles.idle}>
+          <Text style={styles.error}>{error}</Text>
+          {lastQuery !== "" && (
+            <Pressable
+              style={({ pressed }) => [styles.retry, pressed && styles.retryPressed]}
+              onPress={() => runSearch(lastQuery)}
+              accessibilityRole="button"
+            >
+              <Text style={styles.retryText}>Try again</Text>
+            </Pressable>
+          )}
+        </View>
+      )}
 
       {status === "done" && results.length === 0 && (
         <Text style={styles.hint}>No matches. Try a different title.</Text>
@@ -121,6 +136,14 @@ const styles = StyleSheet.create({
   hint: { fontSize: 15, color: "#666", textAlign: "center" },
   idleLink: { fontSize: 15, color: "#1f6feb", fontWeight: "600", textAlign: "center" },
   error: { fontSize: 15, color: "#b3261e", textAlign: "center", marginTop: 24 },
+  retry: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    backgroundColor: "#1f6feb",
+  },
+  retryPressed: { opacity: 0.7 },
+  retryText: { color: "#fff", fontWeight: "600", fontSize: 16 },
   spinner: { marginTop: 32 },
   list: { gap: 12, paddingBottom: 24 },
   row: {

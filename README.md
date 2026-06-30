@@ -75,10 +75,32 @@ wrangler deploy
 wrangler secret put STREAMING_API_KEY      # paste the key at the prompt
 ```
 
-## Build a testable Android artifact (later)
+## Running on a device & building
+
+**Expo Go cannot run this app** — it targets Expo SDK 56, which is newer than
+the public Expo Go supports. Use an EAS **development build** instead.
 
 ```sh
-eas build -p android   # cloud build -> .apk (sideload) / .aab (Play Store)
+# one-time: a custom dev client (install the resulting APK on your phone)
+eas build -p android --profile development
+npx expo start --dev-client        # then open the dev client and connect
+
+# shareable standalone APK (sideload / send to testers)
+eas build -p android --profile preview
+
+# Play Store bundle (.aab)
+eas build -p android --profile production
+```
+
+Profiles live in `eas.json`. JS-only changes don't need a rebuild — just restart
+`expo start`. A rebuild is only required when a **native module** is added (e.g.
+`@react-native-async-storage/async-storage`). `.npmrc` sets `legacy-peer-deps`
+so the EAS cloud install resolves the expo-router web peer conflict.
+
+## Tests
+
+```sh
+npm test          # Vitest — pure logic (verdict, api, storage, linking)
 ```
 
 ## Attribution

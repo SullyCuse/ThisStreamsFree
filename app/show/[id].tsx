@@ -2,7 +2,14 @@
 // cache (populated by the search), resolves the verdict, and renders it.
 
 import { Stack, useLocalSearchParams } from "expo-router";
-import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { VerdictCard } from "../../components/VerdictCard";
 import { getShow } from "../../lib/showCache";
 import { useSubscriptions } from "../../lib/subscriptions";
@@ -10,7 +17,7 @@ import { resolveVerdict } from "../../lib/verdict";
 
 export default function ShowDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { ownedIds } = useSubscriptions();
+  const { ownedIds, ready } = useSubscriptions();
   const show = id ? getShow(id) : undefined;
 
   if (!show) {
@@ -24,7 +31,9 @@ export default function ShowDetailScreen() {
     );
   }
 
-  const verdict = resolveVerdict(show, ownedIds);
+  // Wait for saved subscriptions to load so the verdict doesn't flash the wrong
+  // result (e.g. "Not free for you" → "Free to you") on a cold start.
+  const verdict = ready ? resolveVerdict(show, ownedIds) : null;
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -45,7 +54,11 @@ export default function ShowDetailScreen() {
         </View>
       </View>
 
-      <VerdictCard verdict={verdict} />
+      {verdict ? (
+        <VerdictCard verdict={verdict} />
+      ) : (
+        <ActivityIndicator size="large" color="#1f6feb" />
+      )}
     </ScrollView>
   );
 }
