@@ -8,6 +8,7 @@ export default function RootLayout() {
       <StatusBar style="auto" />
       <Stack>
         <Stack.Screen name="index" options={{ title: "This Streams Free" }} />
+        <Stack.Screen name="show/[id]" options={{ title: "" }} />
         <Stack.Screen name="subscriptions" options={{ title: "My Subscriptions" }} />
         <Stack.Screen name="about" options={{ title: "About" }} />
       </Stack>
