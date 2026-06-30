@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "This Streams Free",
-    "slug": "this-streams-free",
+    "slug": "thisstreamsfree",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -29,6 +29,13 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "bf2e0842-238f-4176-9bba-51172fb17569"
+      }
+    },
+    "owner": "thisstreamsfree"
   }
 }

@@ -99,6 +99,61 @@ describe("resolveVerdict", () => {
     expect(v.paidOptions).toHaveLength(1);
   });
 
+  it("collapses many options for the same unowned service to one row", () => {
+    // Live shape: 1883 lists Paramount+ four times (different season links).
+    const v = resolveVerdict(
+      show([
+        opt("subscription", "paramount", "Paramount+", { link: "https://p/1" }),
+        opt("subscription", "paramount", "Paramount+", { link: "https://p/2" }),
+        opt("subscription", "paramount", "Paramount+", { link: "https://p/3" }),
+        opt("subscription", "paramount", "Paramount+", { link: "https://p/4" }),
+      ]),
+      []
+    );
+    expect(v.unownedSubscriptions).toHaveLength(1);
+    expect(v.unownedSubscriptions[0].service.name).toBe("Paramount+");
+  });
+
+  it("collapses repeated reasons for the same free/owned service to one", () => {
+    const free = resolveVerdict(
+      show([
+        opt("free", "pluto", "Pluto TV", { link: "https://x/1" }),
+        opt("free", "pluto", "Pluto TV", { link: "https://x/2" }),
+      ]),
+      []
+    );
+    expect(free.freeReasons).toHaveLength(1);
+
+    const owned = resolveVerdict(
+      show([
+        opt("subscription", "netflix", "Netflix", { link: "https://n/1" }),
+        opt("subscription", "netflix", "Netflix", { link: "https://n/2" }),
+      ]),
+      ["netflix"]
+    );
+    expect(owned.freeReasons).toHaveLength(1);
+  });
+
+  it("keeps the cheapest option per service per rent/buy type", () => {
+    const price = (amount: string) => ({
+      amount,
+      currency: "USD",
+      formatted: `${amount} USD`,
+    });
+    const v = resolveVerdict(
+      show([
+        opt("buy", "apple", "Apple TV", { link: "https://a/hd", price: price("19.99") }),
+        opt("buy", "apple", "Apple TV", { link: "https://a/sd", price: price("14.99") }),
+        opt("rent", "apple", "Apple TV", { link: "https://a/r", price: price("3.99") }),
+      ]),
+      []
+    );
+    // One 'buy' (cheapest) + one 'rent'.
+    expect(v.paidOptions).toHaveLength(2);
+    const buy = v.paidOptions.find((o) => o.type === "buy");
+    expect(buy?.price?.amount).toBe("14.99");
+  });
+
   it("accepts a Set as well as an array of owned ids", () => {
     const v = resolveVerdict(
       show([opt("subscription", "netflix", "Netflix")]),

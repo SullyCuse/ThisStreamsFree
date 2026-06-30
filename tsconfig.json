@@ -3,5 +3,16 @@
   "compilerOptions": {
     "strict": true
   },
-  "exclude": ["worker", "node_modules", "dist", ".expo"]
+  "exclude": [
+    "worker",
+    "node_modules",
+    "dist",
+    ".expo"
+  ],
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    ".expo/types/**/*.ts",
+    "expo-env.d.ts"
+  ]
 }

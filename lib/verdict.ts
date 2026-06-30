@@ -10,6 +10,10 @@
 //       Channel — service.id "roku", addon.id "peacock" — so ownership must
 //       match the add-on, not the carrier.
 //   - type "rent" | "buy"  -> never free; offered as a paid fallback.
+//
+// Each bucket is collapsed to one row per service for display (Phase 3): the
+// API returns many options for the same service (different seasons/episodes or
+// quality tiers), and a verdict only cares "it's on Paramount+", once.
 
 import type { Show, StreamingOption } from "./types";
 
@@ -22,15 +26,22 @@ export interface Verdict {
   free: boolean;
   // Ways the title is free to THIS user (>= 1 entry exactly when free === true).
   freeReasons: VerdictReason[];
-  // Subscriptions / add-ons it's on that the user does NOT own (deduped).
+  // Subscriptions / add-ons it's on that the user does NOT own (one per service).
   unownedSubscriptions: StreamingOption[];
-  // Rent / buy fallbacks (deduped).
+  // Rent / buy fallbacks (one per service per type, cheapest kept).
   paidOptions: StreamingOption[];
 }
 
-// Dedup key: live responses contain exact-duplicate options for the same title.
-function optionKey(o: StreamingOption): string {
-  return [o.type, o.service?.id, o.addon?.id ?? "", o.link ?? ""].join("|");
+// For add-ons the meaningful name is the add-on, not the carrier service.
+function displayName(o: StreamingOption): string {
+  return o.addon?.name ?? o.service.name;
+}
+
+// Numeric price for "keep the cheapest" comparisons; missing prices sort last.
+// Compared in whatever unit the API uses — display still uses price.formatted.
+function priceAmount(o: StreamingOption): number {
+  const n = o.price ? parseFloat(o.price.amount) : NaN;
+  return Number.isFinite(n) ? n : Infinity;
 }
 
 export function resolveVerdict(
@@ -44,49 +55,48 @@ export function resolveVerdict(
 
   const freeReasons: VerdictReason[] = [];
   const unownedSubscriptions: StreamingOption[] = [];
-  const paidOptions: StreamingOption[] = [];
-  const seen = new Set<string>();
+  const paidByKey = new Map<string, StreamingOption>(); // `${type}|${name}`
+  const seenReason = new Set<string>(); // dedup free reasons by label
+  const seenUnowned = new Set<string>(); // dedup unowned by service name
+
+  const addReason = (option: StreamingOption, label: string) => {
+    if (seenReason.has(label)) return;
+    seenReason.add(label);
+    freeReasons.push({ option, label });
+  };
 
   for (const option of show.streamingOptions ?? []) {
-    const key = optionKey(option);
-    if (seen.has(key)) continue;
-    seen.add(key);
+    const name = displayName(option);
 
     switch (option.type) {
       case "free":
-        freeReasons.push({
-          option,
-          label: `Free with ads on ${option.service.name}`,
-        });
+        addReason(option, `Free with ads on ${option.service.name}`);
         break;
 
       case "subscription":
-        if (owned.has(option.service.id)) {
-          freeReasons.push({
-            option,
-            label: `Included with your ${option.service.name}`,
-          });
-        } else {
+      case "addon": {
+        const isOwned =
+          option.type === "subscription"
+            ? owned.has(option.service.id)
+            : !!option.addon && owned.has(option.addon.id);
+        if (isOwned) {
+          addReason(option, `Included with your ${name}`);
+        } else if (!seenUnowned.has(name)) {
+          seenUnowned.add(name);
           unownedSubscriptions.push(option);
         }
         break;
-
-      case "addon":
-        // Ownership matches the add-on, not the carrier service (see header).
-        if (option.addon && owned.has(option.addon.id)) {
-          freeReasons.push({
-            option,
-            label: `Included with your ${option.addon.name}`,
-          });
-        } else {
-          unownedSubscriptions.push(option);
-        }
-        break;
+      }
 
       case "rent":
-      case "buy":
-        paidOptions.push(option);
+      case "buy": {
+        const key = `${option.type}|${name}`;
+        const existing = paidByKey.get(key);
+        if (!existing || priceAmount(option) < priceAmount(existing)) {
+          paidByKey.set(key, option);
+        }
         break;
+      }
     }
   }
 
@@ -94,6 +104,6 @@ export function resolveVerdict(
     free: freeReasons.length > 0,
     freeReasons,
     unownedSubscriptions,
-    paidOptions,
+    paidOptions: [...paidByKey.values()],
   };
 }
